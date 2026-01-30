@@ -25,20 +25,77 @@ Forked from [CodexMonitor](https://github.com/dimillian/CodexMonitor) and adapte
 
 ## Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/opencode-monitor
+### Prerequisites
+
+- **Rust** 1.70+ (`rustup` recommended)
+- **Node.js** 18+
+- **Tauri CLI**: `cargo install tauri-cli`
+- **OpenCode** (optional): For local server
+- **Pi CLI** (optional): For coding agent
+
+### Platform-Specific Setup
+
+#### Windows
+```powershell
+# Install Rust (if not installed)
+winget install Rustlang.Rust.MSVC
+
+# Install Node.js
+winget install OpenJS.NodeJS.LTS
+
+# Install Tauri CLI
+cargo install tauri-cli
+
+# Install Pi CLI (GitHub Copilot)
+# Download from: https://github.com/ok-norlaker/pi/releases
+# Add to PATH
+
+# Clone and build
+git clone https://github.com/orkuhh/opencode-monitor
 cd opencode-monitor
-
-# Install dependencies
 npm install
+cargo install tauri-cli --version 2
+cargo tauri build --bundles app
+```
 
-# Build Rust backend
-cd src-tauri
-cargo build
+#### macOS
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Run in dev mode
-cd ..
+# Install Node.js (via Homebrew)
+brew install node
+
+# Install Tauri CLI
+cargo install tauri-cli
+
+# Clone and build
+git clone https://github.com/orkuhh/opencode-monitor
+cd opencode-monitor
+npm install
+cargo tauri build --bundles app
+```
+
+#### Linux (Ubuntu/Debian)
+```bash
+# Install dependencies
+sudo apt update
+sudo apt install libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev cargo nodejs
+
+# Install Tauri CLI
+cargo install tauri-cli
+
+# Clone and build
+git clone https://github.com/orkuhh/opencode-monitor
+cd opencode-monitor
+npm install
+cargo tauri build --bundles app
+```
+
+### Development Mode
+
+```bash
+# Run in dev mode (frontend + backend)
 npm run tauri dev
 ```
 
@@ -48,7 +105,11 @@ npm run tauri dev
 
 Start OpenCode server:
 ```bash
+# Linux/macOS
 opencode serve --port 4096 --hostname 0.0.0.0
+
+# Windows
+opencode.exe serve --port 4096 --hostname 0.0.0.0
 ```
 
 ### Pi Configuration
@@ -60,7 +121,11 @@ Default Pi settings:
 
 Configure via UI or environment:
 ```bash
+# Linux/macOS
 export GITHUB_TOKEN=your_token
+
+# Windows (PowerShell)
+$env:GITHUB_TOKEN="your_token"
 ```
 
 ## API Reference
@@ -124,3 +189,20 @@ src/
 ## License
 
 MIT - Forked from CodexMonitor
+
+## Platform Notes
+
+### Windows
+- Full support with Windows-specific dependencies
+- Pi CLI must be installed separately (add to PATH)
+- Dictation/voice features disabled
+
+### macOS
+- Full support including:
+  - Finder app icon integration
+  - Voice dictation (whisper-rs)
+  - macOS-native window management
+
+### Linux
+- Full support
+- May require additional audio dependencies for dictation

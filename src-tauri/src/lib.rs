@@ -37,7 +37,6 @@ pub fn run() {
     }
 
     let builder = tauri::Builder::default()
-        .enable_macos_default_menu(false)
         .manage(menu::MenuItemRegistry::<tauri::Wry>::default())
         .menu(menu::build_menu)
         .on_menu_event(menu::handle_menu_event)
