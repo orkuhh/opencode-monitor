@@ -2,11 +2,12 @@
 // Runs Pi CLI with gpt-5.2-codex and custom Copilot prompt
 
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tokio::process::{Command, Child, Stdio};
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::sync::Mutex;
 use std::collections::HashMap;
+use std::process::Stdio;
+use std::sync::{Arc, Mutex as StdMutex};
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{Child, Command};
+use tokio::sync::Mutex as TokioMutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PiConfig {
@@ -74,7 +75,7 @@ pub struct PiSession {
     pub id: String,
     pub config: PiConfig,
     pub process: Option<Child>,
-    pub output: Arc<Mutex<Vec<String>>>,
+    pub output: Arc<TokioMutex<Vec<String>>>,
 }
 
 impl PiSession {
@@ -83,7 +84,7 @@ impl PiSession {
             id: id.to_string(),
             config: config.unwrap_or_default(),
             process: None,
-            output: Arc::new(Mutex::new(Vec::new())),
+            output: Arc::new(TokioMutex::new(Vec::new())),
         }
     }
 
@@ -139,9 +140,9 @@ impl PiSession {
         }
     }
 
-    pub fn is_running(&self) -> bool {
+    pub fn is_running(&mut self) -> bool {
         match self.process {
-            Some(ref proc) => proc.try_wait().ok().flatten().is_none(),
+            Some(ref mut proc) => proc.try_wait().ok().flatten().is_none(),
             None => false,
         }
     }
@@ -152,15 +153,15 @@ impl PiSession {
 }
 
 pub struct PiManager {
-    sessions: Arc<Mutex<HashMap<String, PiSession>>>,
-    default_config: Arc<Mutex<PiConfig>>,
+    sessions: Arc<TokioMutex<HashMap<String, PiSession>>>,
+    default_config: Arc<StdMutex<PiConfig>>,
 }
 
 impl PiManager {
     pub fn new() -> Self {
         Self {
-            sessions: Arc::new(Mutex::new(HashMap::new())),
-            default_config: Arc::new(Mutex::new(PiConfig::default())),
+            sessions: Arc::new(TokioMutex::new(HashMap::new())),
+            default_config: Arc::new(StdMutex::new(PiConfig::default())),
         }
     }
 
@@ -219,12 +220,12 @@ impl PiManager {
     }
 
     pub fn update_config(&self, config: PiConfig) {
-        let mut default = self.default_config.lock().await;
+        let mut default = self.default_config.lock().unwrap();
         *default = config;
     }
 
     pub fn get_config(&self) -> PiConfig {
-        let default = self.default_config.lock().await;
+        let default = self.default_config.lock().unwrap();
         default.clone()
     }
 }
