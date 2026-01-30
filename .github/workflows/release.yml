@@ -219,12 +219,65 @@ jobs:
           name: appimage-${{ matrix.arch }}
           path: src-tauri/target/release/bundle/appimage/*.AppImage*
 
+  build_windows:
+    runs-on: windows-latest
+    environment: release
+    env:
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      TAURI_SIGNING_PRIVATE_KEY_B64: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_B64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write Tauri signing key
+        run: |
+          $keyPath = "$HOME/.tauri/codexmonitor.key"
+          $keyDir = Split-Path -Parent -Path $keyPath -ErrorAction SilentlyContinue
+          if (-not (Test-Path $keyDir)) {
+            New-Item -ItemType Directory -Path $keyDir -Force | Out-Null
+          }
+          [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.TAURI_SIGNING_PRIVATE_KEY_B64 }}")) | Out-File -FilePath $keyPath -NoNewline
+
+      - name: Build Windows MSI
+        run: |
+          $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Path "$HOME/.tauri/codexmonitor.key" -Raw
+          npm run tauri -- build --bundles msi
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: src-tauri/target/release/bundle/msi/*.msi
+
   release:
     runs-on: ubuntu-latest
     environment: release
     needs:
       - build_macos
       - build_linux
+      - build_windows
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -243,6 +296,12 @@ jobs:
           pattern: appimage-*
           path: release-artifacts
           merge-multiple: true
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: release-artifacts
 
       - name: Build latest.json
         run: |
