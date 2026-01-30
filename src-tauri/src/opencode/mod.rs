@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod client;
 
-pub use opencode::OpenCodeClient;
-pub use opencode::{Session, Message, MessagePart, FileDiff, Agent, HealthResponse};
+pub use client::OpenCodeClient;
+pub use client::{Session, Message, MessagePart, FileDiff, Agent, HealthResponse};

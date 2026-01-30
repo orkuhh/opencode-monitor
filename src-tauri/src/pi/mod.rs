@@ -1,3 +1,4 @@
 pub mod commands;
+pub mod client;
 
-pub use pi::{PiManager, PiSession, PiConfig};
+pub use client::{PiManager, PiSession, PiConfig};
