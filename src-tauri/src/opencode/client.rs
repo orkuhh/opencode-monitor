@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio_stream::{self as stream, StreamExt};
 use reqwest::{Client, Error};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -218,23 +217,24 @@ impl OpenCodeClient {
             .await
     }
 
-    pub async fn events(&self) -> impl tokio_stream::Stream<Item = Result<serde_json::Value, reqwest::Error>> {
-        let response = self
-            .http
-            .get(&format!("{}/event", self.base_url))
-            .send()
-            .await
-            .unwrap();
-        
-        stream::iter(
-            response.bytes_stream()
-                .map(|chunk| {
-                    let chunk = chunk.unwrap();
-                    let line = String::from_utf8_lossy(&chunk);
-                    Ok(serde_json::from_str::<serde_json::Value>(&line).unwrap_or_else(|_| json!({ "raw": line.trim().to_string() })))
-                })
-        )
-    }
+    // events function requires tokio-stream - temporarily disabled
+    // pub async fn events(&self) -> impl tokio_stream::Stream<Item = Result<serde_json::Value, reqwest::Error>> {
+    //     let response = self
+    //         .http
+    //         .get(&format!("{}/event", self.base_url))
+    //         .send()
+    //         .await
+    //         .unwrap();
+    //     
+    //     stream::iter(
+    //         response.bytes_stream()
+    //             .map(|chunk| {
+    //                 let chunk = chunk.unwrap();
+    //                 let line = String::from_utf8_lossy(&chunk);
+    //                 Ok(serde_json::from_str::<serde_json::Value>(&line).unwrap_or_else(|_| json!({ "raw": line.trim().to_string() })))
+    //             })
+    //     )
+    // }
 }
 
 #[cfg(test)]
