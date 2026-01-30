@@ -11,6 +11,8 @@ mod git;
 mod git_utils;
 mod local_usage;
 mod menu;
+mod opencode;
+mod pi;
 mod prompts;
 mod remote_backend;
 mod rules;
@@ -52,6 +54,15 @@ pub fn run() {
         .setup(|app| {
             let state = state::AppState::load(&app.handle());
             app.manage(state);
+            
+            // Initialize OpenCode client
+            let opencode_client = opencode::OpenCodeClient::new("http://localhost:4096");
+            app.manage(opencode_client);
+            
+            // Initialize Pi manager
+            let pi_manager = pi::PiManager::new();
+            app.manage(pi_manager);
+            
             #[cfg(desktop)]
             {
                 app.handle()
@@ -158,7 +169,27 @@ pub fn run() {
             dictation::dictation_request_permission,
             dictation::dictation_stop,
             dictation::dictation_cancel,
-            local_usage::local_usage_snapshot
+            local_usage::local_usage_snapshot,
+            // OpenCode commands
+            opencode::commands::opencode_health,
+            opencode::commands::opencode_list_sessions,
+            opencode::commands::opencode_create_session,
+            opencode::commands::opencode_send_message,
+            opencode::commands::opencode_get_messages,
+            opencode::commands::opencode_get_diffs,
+            opencode::commands::opencode_abort_session,
+            opencode::commands::opencode_delete_session,
+            opencode::commands::opencode_search_files,
+            opencode::commands::opencode_read_file,
+            opencode::commands::opencode_list_files,
+            // Pi commands
+            pi::commands::pi_list_models,
+            pi::commands::pi_get_config,
+            pi::commands::pi_update_config,
+            pi::commands::pi_run_session,
+            pi::commands::pi_wait_session,
+            pi::commands::pi_kill_session,
+            pi::commands::pi_get_output
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application");

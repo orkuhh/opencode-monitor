@@ -1,145 +1,126 @@
-# CodexMonitor
+# OpenCodeMonitor
 
-![CodexMonitor](screenshot.png)
+A Tauri-based dashboard for managing OpenCode sessions and Pi coding agents.
 
-CodexMonitor is a macOS Tauri app for orchestrating multiple Codex agents across local workspaces. It provides a sidebar to manage projects, a home screen for quick actions, and a conversation view backed by the Codex app-server protocol.
+## Overview
+
+Forked from [CodexMonitor](https://github.com/dimillian/CodexMonitor) and adapted for:
+- **OpenCode** - AI coding agent with REST API (localhost:4096)
+- **Pi** - Coding agent with gpt-5.2-codex and custom Copilot prompts
 
 ## Features
 
-### Workspaces & Threads
+### OpenCode Integration
+- List/create/delete sessions
+- Send messages and view responses
+- View file diffs
+- File browsing and search
+- Git integration
 
-- Add and persist workspaces, group/sort them, and jump into recent agent activity from the home dashboard.
-- Spawn one `codex app-server` per workspace, resume threads, and track unread/running state.
-- Worktree and clone agents for isolated work; worktrees live under the app data directory (legacy `.codex-worktrees` supported).
-- Thread management: pin/rename/archive/copy, per-thread drafts, and stop/interrupt in-flight turns.
-- Optional remote backend (daemon) mode for running Codex on another machine.
+### Pi Agent Integration
+- Configure Pi settings (model, thinking level, system prompt)
+- Run Pi sessions with custom prompts
+- Real-time output streaming
+- Multiple concurrent sessions
 
-### Composer & Agent Controls
-
-- Compose with queueing plus image attachments (picker, drag/drop, paste).
-- Autocomplete for skills (`$`), prompts (`/prompts:`), reviews (`/review`), and file paths (`@`).
-- Model picker, collaboration modes (when enabled), reasoning effort, access mode, and context usage ring.
-- Dictation with hold-to-talk shortcuts and live waveform (Whisper).
-- Render reasoning/tool/diff items and handle approval prompts.
-
-### Git & GitHub
-
-- Diff stats, staged/unstaged file diffs, revert/stage controls, and commit log.
-- Branch list with checkout/create plus upstream ahead/behind counts.
-- GitHub Issues and Pull Requests via `gh` (lists, diffs, comments) and open commits/PRs in the browser.
-- PR composer: "Ask PR" to send PR context into a new agent thread.
-
-### Files & Prompts
-
-- File tree with search, file-type icons, and Reveal in Finder.
-- Prompt library for global/workspace prompts: create/edit/delete/move and run in current or new threads.
-
-### UI & Experience
-
-- Resizable sidebar/right/plan/terminal/debug panels with persisted sizes.
-- Responsive layouts (desktop/tablet/phone) with tabbed navigation.
-- Sidebar usage and credits meter for account rate limits plus a home usage snapshot.
-- Terminal dock with multiple tabs for background commands (experimental).
-- In-app updates with toast-driven download/install, debug panel copy/clear, sound notifications, and macOS overlay title bar with vibrancy + reduced transparency toggle.
-
-## Requirements
-
-- Node.js + npm
-- Rust toolchain (stable)
-- CMake (required for native dependencies; Whisper/dictation uses it on non-Windows)
-- Codex installed on your system and available as `codex` in `PATH`
-- Git CLI (used for worktree operations)
-- GitHub CLI (`gh`) for the Issues panel (optional)
-
-If the `codex` binary is not in `PATH`, update the backend to pass a custom path per workspace.
-If you hit native build errors, run:
+## Installation
 
 ```bash
-npm run doctor
-```
+# Clone the repository
+git clone https://github.com/yourusername/opencode-monitor
+cd opencode-monitor
 
-## Getting Started
-
-Install dependencies:
-
-```bash
+# Install dependencies
 npm install
-```
 
-Run in dev mode:
+# Build Rust backend
+cd src-tauri
+cargo build
 
-```bash
+# Run in dev mode
+cd ..
 npm run tauri dev
 ```
 
-## Release Build
+## Configuration
 
-Build the production Tauri bundle (app + dmg):
+### OpenCode Server
 
+Start OpenCode server:
 ```bash
-npm run tauri build
+opencode serve --port 4096 --hostname 0.0.0.0
 ```
 
-The macOS app bundle will be in `src-tauri/target/release/bundle/macos/`.
+### Pi Configuration
 
-### Windows (opt-in)
+Default Pi settings:
+- Model: `gpt-5.2-codex`
+- Thinking: `xhigh`
+- Provider: `github-copilot`
 
-Windows builds are opt-in and use a separate Tauri config file to avoid macOS-only window effects.
-
+Configure via UI or environment:
 ```bash
-npm run tauri:build:win
+export GITHUB_TOKEN=your_token
 ```
 
-Artifacts will be in:
+## API Reference
 
-- `src-tauri/target/release/bundle/nsis/` (installer exe)
-- `src-tauri/target/release/bundle/msi/` (msi)
+### OpenCode Commands
 
-Note: dictation is currently disabled on Windows builds (to avoid requiring LLVM/libclang for `whisper-rs`/bindgen).
+| Command | Description |
+|---------|-------------|
+| `opencode_health` | Check server health |
+| `opencode_list_sessions` | List all sessions |
+| `opencode_create_session` | Create new session |
+| `opencode_send_message` | Send message to session |
+| `opencode_get_messages` | Get session messages |
+| `opencode_get_diffs` | Get file diffs |
+| `opencode_abort_session` | Abort running session |
+| `opencode_delete_session` | Delete session |
+| `opencode_search_files` | Search files |
+| `opencode_read_file` | Read file content |
+| `opencode_list_files` | List directory |
 
-## Type Checking
+### Pi Commands
 
-Run the TypeScript checker (no emit):
+| Command | Description |
+|---------|-------------|
+| `pi_list_models` | List available models |
+| `pi_get_config` | Get current Pi config |
+| `pi_update_config` | Update Pi config |
+| `pi_run_session` | Run Pi session |
+| `pi_wait_session` | Wait for session to complete |
+| `pi_kill_session` | Kill running session |
+| `pi_get_output` | Get session output |
 
-```bash
-npm run typecheck
+## Development
+
+### Project Structure
+
 ```
+src-tauri/src/
+├── lib.rs              # Main Tauri app
+├── opencode/           # OpenCode client & commands
+│   ├── mod.rs
+│   ├── opencode.rs     # HTTP client
+│   └── commands.rs     # Tauri commands
+├── pi/                 # Pi agent integration
+│   ├── mod.rs
+│   ├── pi.rs           # Pi session manager
+│   └── commands.rs     # Tauri commands
+└── ...
 
-Note: `npm run build` also runs `tsc` before bundling the frontend.
-
-## Project Structure
-
-```
 src/
-  features/         feature-sliced UI + hooks
-  services/         Tauri IPC wrapper
-  styles/           split CSS by area
-  types.ts          shared types
-src-tauri/
-  src/lib.rs        Tauri backend + codex app-server client
-  tauri.conf.json   window configuration
+└── features/           # Frontend React components
 ```
 
-## Notes
+### Adding New Commands
 
-- Workspaces persist to `workspaces.json` under the app data directory.
-- App settings persist to `settings.json` under the app data directory (Codex path, default access mode, UI scale).
-- Experimental settings supported in the UI: Collab mode (`features.collab`), Background terminal (`features.unified_exec`), and Steer mode (`features.steer`), synced to `$CODEX_HOME/config.toml` (or `~/.codex/config.toml`) on load/save.
-- On launch and on window focus, the app reconnects and refreshes thread lists for each workspace.
-- Threads are restored by filtering `thread/list` results using the workspace `cwd`.
-- Selecting a thread always calls `thread/resume` to refresh messages from disk.
-- CLI sessions appear if their `cwd` matches the workspace path; they are not live-streamed unless resumed.
-- The app uses `codex app-server` over stdio; see `src-tauri/src/lib.rs`.
-- Codex sessions use the default Codex home (usually `~/.codex`); if a legacy `.codexmonitor/` exists in a workspace, it is used for that workspace.
-- Worktree agents live under the app data directory (`worktrees/<workspace-id>`); legacy `.codex-worktrees/` paths remain supported, and the app no longer edits repo `.gitignore` files.
-- UI state (panel sizes, reduced transparency toggle, recent thread activity) is stored in `localStorage`.
-- Custom prompts load from `$CODEX_HOME/prompts` (or `~/.codex/prompts`) with optional frontmatter description/argument hints.
+1. Add function to `opencode.rs` or `pi.rs`
+2. Create command wrapper in `commands.rs`
+3. Export in `mod.rs`
+4. Register in `lib.rs` invoke_handler
 
-## Tauri IPC Surface
+## License
 
-Frontend calls live in `src/services/tauri.ts` and map to commands in `src-tauri/src/lib.rs`. Core commands include:
-
-- Workspace lifecycle: `list_workspaces`, `add_workspace`, `add_worktree`, `remove_workspace`, `remove_worktree`, `connect_workspace`, `update_workspace_settings`.
-- Threads: `start_thread`, `list_threads`, `resume_thread`, `archive_thread`, `send_user_message`, `turn_interrupt`, `respond_to_server_request`.
-- Reviews + models: `start_review`, `model_list`, `account_rate_limits`, `skills_list`.
-- Git + files: `get_git_status`, `get_git_diffs`, `get_git_log`, `get_git_remote`, `list_git_branches`, `checkout_git_branch`, `create_git_branch`, `list_workspace_files`.
+MIT - Forked from CodexMonitor
