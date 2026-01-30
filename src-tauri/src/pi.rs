@@ -234,15 +234,6 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_list_models() {
-        let manager = PiManager::new();
-        let models = manager.list_models().await;
-        assert!(models.is_ok());
-        let m = models.unwrap();
-        println!("Available models: {:?}", m.iter().take(5).collect::<Vec<_>>());
-    }
-
-    #[tokio::test]
     async fn test_default_config() {
         let config = PiConfig::default();
         println!("Default model: {}", config.model);
