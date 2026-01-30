@@ -1,6 +1,6 @@
 // OpenCode Tauri Commands
 
-use crate::opencode::OpenCodeClient;
+use crate::opencode::{OpenCodeClient, Session, Message, FileDiff};
 use tauri::State;
 
 // Global OpenCode client instance
@@ -12,13 +12,13 @@ pub async fn opencode_health(client: State<'_, OpenCodeClient>) -> Result<serde_
 }
 
 #[tauri::command]
-pub async fn opencode_list_sessions(client: State<'_, OpenCodeClient>) -> Result<Vec<super::opencode::Session>, String> {
+pub async fn opencode_list_sessions(client: State<'_, OpenCodeClient>) -> Result<Vec<Session>, String> {
     client.list_sessions().await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn opencode_create_session(client: State<'_, OpenCodeClient>, title: Option<&str>) -> Result<super::opencode::Session, String> {
+pub async fn opencode_create_session(client: State<'_, OpenCodeClient>, title: Option<&str>) -> Result<Session, String> {
     client.create_session(title).await
         .map_err(|e| e.to_string())
 }
@@ -29,7 +29,7 @@ pub async fn opencode_send_message(
     session_id: &str,
     message: &str,
     model: Option<&str>
-) -> Result<Vec<super::opencode::Message>, String> {
+) -> Result<Vec<Message>, String> {
     client.send_message(session_id, message, model).await
         .map_err(|e| e.to_string())
 }
@@ -39,13 +39,13 @@ pub async fn opencode_get_messages(
     client: State<'_, OpenCodeClient>,
     session_id: &str,
     limit: Option<i32>
-) -> Result<Vec<super::opencode::Message>, String> {
+) -> Result<Vec<Message>, String> {
     client.get_messages(session_id, limit).await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn opencode_get_diffs(client: State<'_, OpenCodeClient>, session_id: &str) -> Result<Vec<super::opencode::FileDiff>, String> {
+pub async fn opencode_get_diffs(client: State<'_, OpenCodeClient>, session_id: &str) -> Result<Vec<FileDiff>, String> {
     client.get_diffs(session_id).await
         .map_err(|e| e.to_string())
 }
